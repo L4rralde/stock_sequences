@@ -167,12 +167,14 @@ class MyTransformerEncoderRegressor(nn.Module):
         return hist
 
 
-RESULTS = dict(CONFS)
-for conf in CONFS:
-    model = MyTransformerEncoderRegressor.from_params(conf)
-    training_history = MyTransformerEncoderRegressor.get_training_hist(conf)
-    RESULTS[conf]['model'] = model
-    RESULTS[conf]['training_history'] = training_history
+def get_results() -> dict:
+    results = dict(CONFS)
+    for conf in CONFS:
+        model = MyTransformerEncoderRegressor.from_params(conf)
+        training_history = MyTransformerEncoderRegressor.get_training_hist(conf)
+        results[conf]['model'] = model
+        results[conf]['training_history'] = training_history
+    return results
 
 
 class BaselineModel(nn.Module):
