@@ -151,7 +151,7 @@ class MyTransformerEncoderRegressor(nn.Module):
                 map_location=torch.device('cpu')
             )
         )
-        print(status)
+        #print(status)
         return model
 
     @staticmethod
@@ -165,6 +165,14 @@ class MyTransformerEncoderRegressor(nn.Module):
             for array in arrays
         }
         return hist
+
+
+RESULTS = dict(CONFS)
+for conf in CONFS:
+    model = MyTransformerEncoderRegressor.from_params(conf)
+    training_history = MyTransformerEncoderRegressor.get_training_hist(conf)
+    RESULTS[conf]['model'] = model
+    RESULTS[conf]['training_history'] = training_history
 
 
 class BaselineModel(nn.Module):
