@@ -12,7 +12,7 @@ MODELS_PATH = f"{GIT_ROOT}/models"
 os.makedirs(MODELS_PATH, exist_ok=True)
 
 
-def train(model: nn.Module, epochs: int, device: str, train_dataloader: object, val_dataloader) -> dict:
+def train(model: nn.Module, epochs: int, device: str, train_dataloader: object, val_dataloader, subdir: str) -> dict:
     train_size = len(train_dataloader)
     val_size = len(val_dataloader)
 
@@ -54,7 +54,9 @@ def train(model: nn.Module, epochs: int, device: str, train_dataloader: object, 
         print(f"Epoch: {epoch}. Training loss:{train_loss: .3e}; Validation loss: {val_loss :.3e}")
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            model_path = f"{MODELS_PATH}/{type(model).__name__}_{val_loss}"
+            model_dir = f"{MODELS_PATH}/{subdir}"
+            os.makedirs(model_dir, exist_ok=True)
+            model_path = f"{model_dir}/{type(model).__name__}_{val_loss}"
             print(f"Saving model at: {model_path}")
             torch.save(model.state_dict(), model_path)
 

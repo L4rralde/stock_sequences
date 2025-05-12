@@ -25,22 +25,30 @@ class MyFirstLstm(nn.Module):
 
 
 class MyTransformerEncoderLayer(nn.Module):
-    def __init__(self, d_model: int, nhead: int, dim_feedforward: int) -> None:
+    def __init__(self, d_model: int, nhead: int, dim_feedforward: int, n_ff_layers: int=2) -> None:
         super().__init__()
     
         #Self attention
         self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=0.1, batch_first=True)
         
         #Feedforward model
-        self.ff_block = nn.Sequential(
-            nn.Linear(d_model, dim_feedforward),
-            nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(dim_feedforward, d_model),
-            #nn.ReLU(),
-            #nn.Dropout(0.1),
-            #nn.Linear(dim_feedforward, d_model),
+        self.ff_block = nn.ModuleList()
+        self.ff_block.append(
+            nn.Sequential(
+                nn.Linear(d_model, dim_feedforward),
+                nn.ReLU(),
+                nn.Dropout(0.1)
+            )
         )
+        for _ in range(n_ff_layers - 2):
+            self.ff_block.append(
+            nn.Sequential(
+                nn.Linear(dim_feedforward, dim_feedforward),
+                nn.ReLU(),
+                nn.Dropout(0.1)
+            )
+        )   
+        self.ff_block.append(nn.Linear(dim_feedforward, d_model))
 
         #Normalization layers:
         self.norm1 = nn.LayerNorm(d_model)
@@ -54,7 +62,8 @@ class MyTransformerEncoderLayer(nn.Module):
         return self.dropout1(x)
 
     def _ff_block(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.ff_block(x)
+        for layer in self.ff_block:
+            x = layer(x)
         return self.dropout2(x)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -87,7 +96,6 @@ class PositionalEncoding(nn.Module):
         self.register_buffer("pe", pe)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        #x = x + self.pe[:, : x.size(1)].requires_grad_(False)
         x = x + self.pe[:, : x.size(1)]
         return x
 
