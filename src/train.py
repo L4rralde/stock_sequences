@@ -1,9 +1,11 @@
 import os
+import logging
 
 from tqdm import tqdm
 from torch.optim import Adam
 import torch
 import torch.nn as nn
+import numpy as np
 
 from src.utils import GIT_ROOT
 
@@ -13,6 +15,19 @@ os.makedirs(MODELS_PATH, exist_ok=True)
 
 
 def train(model: nn.Module, epochs: int, device: str, train_dataloader: object, val_dataloader, subdir: str) -> dict:
+    model_dir = f"{MODELS_PATH}/{subdir}"
+    os.makedirs(model_dir, exist_ok=True)
+
+
+    fileh = logging.FileHandler(f"{model_dir}/training.log", 'a')
+    sys_out = logging.StreamHandler()
+    logger = logging.getLogger(__name__)  # root logger
+    logger.setLevel(logging.INFO)
+    for hdlr in logger.handlers[:]:  # remove all old handlers
+        logger.removeHandler(hdlr)
+    logger.addHandler(sys_out)
+    logger.addHandler(fileh)
+
     train_size = len(train_dataloader)
     val_size = len(val_dataloader)
 
@@ -51,16 +66,19 @@ def train(model: nn.Module, epochs: int, device: str, train_dataloader: object, 
         val_loss /= val_size
         val_losses.append(val_loss)
 
-        print(f"Epoch: {epoch}. Training loss:{train_loss: .3e}; Validation loss: {val_loss :.3e}")
+        logger.info(f"Epoch: {epoch}. Training loss:{train_loss: .3e}; Validation loss: {val_loss :.3e}")
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            model_dir = f"{MODELS_PATH}/{subdir}"
-            os.makedirs(model_dir, exist_ok=True)
             model_path = f"{model_dir}/{type(model).__name__}_{val_loss}"
-            print(f"Saving model at: {model_path}")
+            logger.info(f"Saving model at: {model_path}")
             torch.save(model.state_dict(), model_path)
 
-    return {
-        "Training losses": train_losses,
-        "Validation losses": val_losses,
+    hist = {
+        "training_losses": train_losses,
+        "validation_losses": val_losses,
     }
+
+    logger.info("Saving training history")
+    for k, array in hist.items():
+        np.save(f"{model_dir}/{k}.npy", array)
+    return hist
