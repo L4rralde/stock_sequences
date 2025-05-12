@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, random_split
 import pandas as pd
 
 from src.utils import GIT_ROOT
@@ -35,3 +35,15 @@ class StockDataset(Dataset):
     @classmethod
     def item_ds(cls) -> "StockDataset":
         return cls(df_filled, last_only=True)
+
+
+DATASET = StockDataset.item_ds()
+
+__train_size = int(0.8 * len(DATASET))
+__val_size = int(0.1 * len(DATASET))
+__test_size = len(DATASET) - __train_size - __val_size
+
+TRAIN_DATASET, VAL_DATASET, TEST_DATASET = random_split(
+    DATASET,
+    [__train_size, __val_size, __test_size]
+)
