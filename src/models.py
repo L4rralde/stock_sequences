@@ -91,22 +91,3 @@ class PositionalEncoding(nn.Module):
         x = x + self.pe[:, : x.size(1)]
         return x
 
-
-class MyTransformerEncoderRegressor(nn.Module):
-    def __init__(self, d_model: int, nhead: int, dim_feedforward: int, max_len: int=100) -> None:
-        super().__init__()
-        self.positional_encoding =  PositionalEncoding(d_model, max_len)
-        self.transformer_encoder = MyTransformerEncoderLayer(d_model, nhead, dim_feedforward)
-        self.regression_head = nn.Sequential(
-            nn.Linear(d_model, 128),
-            nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(128, d_model),
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.positional_encoding(x)
-        x = self.transformer_encoder(x)
-        #x = x[:, -1, :]
-        #x = self.regression_head(x)
-        return x
