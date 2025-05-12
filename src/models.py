@@ -1,7 +1,13 @@
 import math
+import yaml
+from glob import glob
+import os
 
 import torch
 import torch.nn as nn
+import numpy as np
+
+from src.utils import GIT_ROOT
 
 class MyFirstLstm(nn.Module):
     def __init__(self, hidden_size: int, embedding_dim: int) -> None:
@@ -99,3 +105,68 @@ class PositionalEncoding(nn.Module):
         x = x + self.pe[:, : x.size(1)]
         return x
 
+
+with open("params.yaml") as stream:
+    CONFS = yaml.safe_load(stream)
+
+
+class MyTransformerEncoderRegressor(nn.Module):
+    def __init__(self, d_model: int, nhead: int, dim_feedforward: int, max_len: int=100, ntransformers: int=1, n_ff_layers: int = 2) -> None:
+        super().__init__()
+        self.positional_encoding =  PositionalEncoding(d_model, max_len)
+        self.transformers = nn.ModuleList()
+        self.transformers.append(MyTransformerEncoderLayer(d_model, nhead, dim_feedforward, n_ff_layers=n_ff_layers))
+        for _ in range(ntransformers - 1):
+            self.transformers.append(MyTransformerEncoderLayer(d_model, nhead, dim_feedforward, n_ff_layers=n_ff_layers))
+        self.regression_head = nn.Sequential(
+            nn.Linear(d_model, 128),
+            nn.ReLU(),
+            nn.Dropout(0.4),
+            nn.Linear(128, d_model),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.positional_encoding(x)
+        for transformer in self.transformers:
+            x = transformer(x)
+        x = x[:, -1, :]
+        x = self.regression_head(x)
+        return x
+
+    @classmethod
+    def from_params(cls, conf: str, weights: str="best") -> "MyTransformerEncoderRegressor":
+        model = cls(
+            d_model = 9,
+            nhead = CONFS[conf]['NHEADS'],
+            dim_feedforward = CONFS[conf]['DIM_FEEDFORWARD'],
+            max_len = 100,
+            ntransformers = CONFS[conf]['NTRANSFORMERS'],
+            n_ff_layers = CONFS[conf]['N_FF_LAYERS']
+        )
+        path = f"{GIT_ROOT}/models/{conf}/{weights}"
+        status = model.load_state_dict(
+            torch.load(
+                path,
+                weights_only=True,
+                map_location=torch.device('cpu')
+            )
+        )
+        print(status)
+        return model
+
+    @staticmethod
+    def get_training_hist(conf) -> dict:
+        dir = f"{GIT_ROOT}/models/{conf}"
+        if not os.path.exists(dir):
+            raise RuntimeError("Dir does not exist")
+        arrays = glob(f"{dir}/*.npy")
+        hist = {
+            os.path.basename(array).split('.')[0]: np.load(array)
+            for array in arrays
+        }
+        return hist
+
+
+class BaselineModel(nn.Module):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x[:, -1, :]
