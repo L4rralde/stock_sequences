@@ -1,5 +1,6 @@
 import os
 import logging
+from time import perf_counter
 
 from tqdm import tqdm
 from torch.optim import Adam
@@ -38,6 +39,7 @@ def train(model: nn.Module, epochs: int, device: str, train_dataloader: object, 
     val_losses = []
     best_val_loss = float('inf')
 
+    start = perf_counter()
     for epoch in tqdm(range(1, epochs+1)):
         train_loss = 0.0
         model.train()
@@ -72,7 +74,10 @@ def train(model: nn.Module, epochs: int, device: str, train_dataloader: object, 
             model_path = f"{model_dir}/{type(model).__name__}_{val_loss}"
             logger.info(f"Saving model at: {model_path}")
             torch.save(model.state_dict(), model_path)
+    end = perf_counter()
 
+    execution_time = end - start
+    logger.info(f"Execution time: {execution_time: .4f}s")
     hist = {
         "training_losses": train_losses,
         "validation_losses": val_losses,
