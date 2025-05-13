@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+from src.models import get_results
 
 def eval(model: nn.Module, test_dataloader: object) -> float:
     loss_fn = nn.MSELoss()
@@ -22,3 +23,11 @@ def eval(model: nn.Module, test_dataloader: object) -> float:
     
     total_loss /= num_samples
     return total_loss
+
+
+def main() -> None:
+    results = get_results()
+
+
+if __name__ == '__main__':
+    main()

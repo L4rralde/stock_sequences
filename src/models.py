@@ -168,8 +168,11 @@ class MyTransformerEncoderRegressor(nn.Module):
 
 
 def get_results() -> dict:
-    results = dict(CONFS)
-    for conf in CONFS:
+    with open("params.yaml") as stream:
+        confs = yaml.safe_load(stream)
+
+    results = dict(confs)
+    for conf in confs:
         model = MyTransformerEncoderRegressor.from_params(conf)
         training_history = MyTransformerEncoderRegressor.get_training_hist(conf)
         results[conf]['model'] = model

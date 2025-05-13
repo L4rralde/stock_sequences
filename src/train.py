@@ -29,9 +29,6 @@ def train(model: nn.Module, epochs: int, device: str, train_dataloader: object, 
     logger.addHandler(sys_out)
     logger.addHandler(fileh)
 
-    train_size = len(train_dataloader)
-    val_size = len(val_dataloader)
-
     optimizer = Adam(model.parameters(), lr=1e-3)
     loss_fn = nn.MSELoss()
 
@@ -43,6 +40,7 @@ def train(model: nn.Module, epochs: int, device: str, train_dataloader: object, 
     for epoch in tqdm(range(1, epochs+1)):
         train_loss = 0.0
         model.train()
+        num_train_elements = 0
         for x, y in train_dataloader:
             x = x.to(device)
             y = y.to(device)
@@ -52,26 +50,32 @@ def train(model: nn.Module, epochs: int, device: str, train_dataloader: object, 
             loss.backward()
             optimizer.step()
 
-            train_loss += loss.data.item() * x.size(0)
-        train_loss /= train_size
+            batch_size = x.size(0)
+            train_loss += loss.data.item() * batch_size
+            num_train_elements += batch_size
+        train_loss /= num_train_elements
         train_losses.append(train_loss)
         
         model.eval()
         val_loss = 0.0
+        num_val_elements = 0
         with torch.no_grad():
             for x, y in val_dataloader:
                 x = x.to(device)
                 y = y.to(device)
                 y_hat = model(x)
                 loss = loss_fn(torch.squeeze(y_hat), torch.squeeze(y))
-                val_loss += loss.data.item() * x.size(0)
-        val_loss /= val_size
+
+                batch_size = x.size(0)
+                val_loss += loss.data.item() * batch_size
+                num_val_elements += batch_size
+        val_loss /= num_val_elements
         val_losses.append(val_loss)
 
         logger.info(f"Epoch: {epoch}. Training loss:{train_loss: .3e}; Validation loss: {val_loss :.3e}")
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            model_path = f"{model_dir}/{type(model).__name__}_{val_loss}"
+            model_path = f"{model_dir}/best"
             logger.info(f"Saving model at: {model_path}")
             torch.save(model.state_dict(), model_path)
     end = perf_counter()
