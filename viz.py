@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from torchview import draw_graph
 
 from src.dataset import TEST_DATASET
-from src.models import RESULTS
+from src.models import get_results
 from src.utils import GIT_ROOT
 
 
@@ -19,7 +19,8 @@ for x, _ in test_dataloader:
     break
 z = torch.zeros_like(x)
 
-for conf, result in RESULTS.items():
+results = get_results()
+for conf, result in results.items():
     model = result['model']
     model_graph = draw_graph(model, z)
     fpath = f"{IMG_DIR}/{conf.lower()}"
