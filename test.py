@@ -14,6 +14,8 @@ def eval(model: nn.Module, test_dataloader: DataLoader) -> float:
     with torch.no_grad():
         for x, y in test_dataloader:
             y_hat = model(x)
+            y_hat = y_hat[:, -1, :]
+            y = y[:, -1, :]
             loss = loss_fn(
                 torch.squeeze(y_hat),
                 torch.squeeze(y)

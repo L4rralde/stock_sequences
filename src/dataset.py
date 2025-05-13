@@ -37,7 +37,7 @@ class StockDataset(Dataset):
         return cls(df_filled, last_only=True)
 
 
-DATASET = StockDataset.item_ds()
+DATASET = StockDataset.sequential_ds()
 
 __train_size = int(0.8 * len(DATASET))
 __val_size = int(0.1 * len(DATASET))

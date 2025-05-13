@@ -118,19 +118,11 @@ class MyTransformerEncoderRegressor(nn.Module):
         self.transformers.append(MyTransformerEncoderLayer(d_model, nhead, dim_feedforward, n_ff_layers=n_ff_layers))
         for _ in range(ntransformers - 1):
             self.transformers.append(MyTransformerEncoderLayer(d_model, nhead, dim_feedforward, n_ff_layers=n_ff_layers))
-        self.regression_head = nn.Sequential(
-            nn.Linear(d_model, 128),
-            nn.ReLU(),
-            nn.Dropout(0.4),
-            nn.Linear(128, d_model),
-        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.positional_encoding(x)
         for transformer in self.transformers:
             x = transformer(x)
-        x = x[:, -1, :]
-        x = self.regression_head(x)
         return x
 
     @classmethod
@@ -182,4 +174,4 @@ def get_results() -> dict:
 
 class BaselineModel(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return x[:, -1, :]
+        return x
